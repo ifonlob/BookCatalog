@@ -1,7 +1,7 @@
 ### HTTP examples (IntelliJ HTTP Client)
 @base = http://localhost:8080
 
-### Entrega 1 — eco
+### Entrega 1 — eco (histórico; desde la entrega 2 estas rutas devuelven JSON)
 GET {{base}}/books
 ###
 GET {{base}}/books/42
@@ -12,26 +12,26 @@ PUT {{base}}/books/42
 ###
 DELETE {{base}}/books/42
 
-### Desde entrega 2 (200) / entrega 3 (201 + Location)
+### Entrega 3: alta → 201 + Location relativa (/books/{id}) y DTO en el cuerpo
 POST {{base}}/books
 Content-Type: application/json
 
 {"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
 
-### Usar el id/Location devuelto, no suponer un libro precargado
+### La Location es relativa: usad el id devuelto, no un libro precargado
 GET {{base}}/books/1
 
-### Listado JSON (entrega 2)
+### Listado JSON (200)
 GET {{base}}/books
 Accept: application/json
 
-### Modificación JSON (entrega 2; sustituir el 1 por el id devuelto)
+### Modificación JSON (200, mismo id; sustituir el 1 por el id devuelto)
 PUT {{base}}/books/1
 Content-Type: application/json
 
 {"isbn":"978-1","title":"DDD 2.ª ed.","author":"Evans","year":2004}
 
-### Borrado (entrega 2; sustituir el 1 por el id devuelto)
+### Borrado desde la entrega 3: 204 sin cuerpo (sustituir el 1 por el id devuelto)
 DELETE {{base}}/books/1
 
 ### Desde entrega 6: validación 400 con payload
