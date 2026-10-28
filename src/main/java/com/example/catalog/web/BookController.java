@@ -6,6 +6,7 @@ import com.example.catalog.model.Book;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
+import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +31,12 @@ public class BookController {
     }
 
     @PostMapping
-    public BookResponseDTO create(@RequestBody BookRequestDTO request) {
+    public ResponseEntity<BookResponseDTO> create(@RequestBody BookRequestDTO request) {
         Book book = new Book(ids.getAndIncrement(), request.isbn(), request.title(),
                 request.author(), request.year());
         books.put(book.getId(), book);
-        return toDto(book);
+        BookResponseDTO dto = toDto(book);
+        return ResponseEntity.created(URI.create("/books/" + dto.id())).body(dto);
     }
 
     @PutMapping("/{id}")
@@ -47,8 +49,9 @@ public class BookController {
     }
 
     @DeleteMapping("/{id}")
-    public void delete(@PathVariable("id") Long id) {
+    public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         books.remove(id);
+        return ResponseEntity.noContent().build();
     }
 
     private BookResponseDTO toDto(Book book) {
