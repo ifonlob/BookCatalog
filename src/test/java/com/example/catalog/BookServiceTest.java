@@ -5,7 +5,10 @@ import com.example.catalog.dto.BookResponseDTO;
 import com.example.catalog.service.BookService;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class BookServiceTest {
@@ -23,13 +26,32 @@ public class BookServiceTest {
     }
 
     @Test
-    void listKeepsInsertionOrder() { /* crear dos y comparar ids */ }
+    void listKeepsInsertionOrder() {
+        service.create(ddd);
+        service.create(new BookRequestDTO("978-2", "TDD", "Beck", 2002));
+        assertEquals(List.of(1L, 2L),
+                service.list().stream().map(BookResponseDTO::id).toList());
+    }
 
     @Test
-    void updateKeepsTheRouteId() { /* update(1L, otro) → id 1 y datos nuevos */ }
+    void updateKeepsTheRouteId() {
+        service.create(ddd);
+        BookResponseDTO updated = service.update(1L,
+                new BookRequestDTO("978-1", "DDD 2.ª ed.", "Evans", 2004));
+        assertEquals(1L, updated.id());
+        assertEquals("DDD 2.ª ed.", updated.title());
+        assertEquals(updated, service.get(1L));
+    }
 
     @Test
-    void deleteRemovesOnlyThatBook() { /* crear dos, borrar uno, list() de tamaño 1 */ }
+    void deleteRemovesOnlyThatBook() {
+        service.create(ddd);
+        service.create(new BookRequestDTO("978-2", "TDD", "Beck", 2002));
+        service.delete(1L);
+        assertEquals(1, service.list().size());
+        assertNull(service.get(1L));
+        assertNotNull(service.get(2L));
+    }
 
     @Test
     void getReturnsNullWhenMissing() { assertNull(service.get(99L)); }
