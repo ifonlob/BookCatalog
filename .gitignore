@@ -6,3 +6,6 @@ target/
 *.log
 .DS_Store
 .mvn/wrapper/maven-wrapper.jar
+
+# Estado local de la entrega activa (lo escribe classroom/ActivarEntrega.java)
+classroom/entrega-activa.txt
