@@ -1,10 +1,9 @@
 package com.example.catalog.web;
 
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping(value = "/books", produces = MediaType.TEXT_PLAIN_VALUE)
+@RequestMapping(value = "/books")
 public class BookController {
 
     @GetMapping
