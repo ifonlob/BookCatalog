@@ -1,0 +1,28 @@
+### HTTP examples (IntelliJ HTTP Client)
+@base = http://localhost:8080
+
+### Entrega 1 — eco
+GET {{base}}/books
+###
+GET {{base}}/books/42
+###
+POST {{base}}/books
+###
+PUT {{base}}/books/42
+###
+DELETE {{base}}/books/42
+
+### Desde entrega 2 (200) / entrega 3 (201 + Location)
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
+
+### Usar el id/Location devuelto, no suponer un libro precargado
+GET {{base}}/books/1
+
+### Desde entrega 6: validación 400 con payload
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-1","title":" ","author":"Evans","year":2003}
