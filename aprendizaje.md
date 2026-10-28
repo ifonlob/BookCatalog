@@ -188,6 +188,59 @@ Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
 Tests run: 6, Failures: 0, Errors: 0 -- total
 ```
 
+## Entrega 4
+
+- **Comportamiento que añadimos o contrato que evolucionamos.** El contrato HTTP
+  no cambia: `201` + `Location` en el alta, `204` sin cuerpo en el borrado y
+  `200` con representación en consulta y modificación. Lo que cambia es la
+  estructura: se extrae `com.example.catalog.service.BookService` con las cinco
+  firmas del contrato y el controlador pasa a recibirlo por constructor. El
+  controlador se queda sin `Map` y sin `AtomicLong`; solo traduce HTTP.
+
+- **Test y rojo observado, en dos fases.** La primera fue de **compilación**: la
+  semilla importa `com.example.catalog.service.BookService` y la clase no
+  existía (`package com.example.catalog.service does not exist`), porque el
+  PR #7 fusionó el controlador y los tests sin el archivo del servicio. La
+  segunda fue de **comportamiento** y la reproducimos localmente, creando el
+  servicio y dejando el controlador de la entrega 3: 5 fallos, con
+  `Location expected:</books/17> but was:</books/1>` y
+  `Wanted but not invoked ... there were zero interactions with this mock` en
+  cada `verify`.
+
+- **Cambio mínimo y resultado verde.** `BookService` concentra `LinkedHashMap` y
+  `AtomicLong`, reutiliza un único `toDto` y expone las cinco operaciones
+  devolviendo DTOs. El controlador queda en una línea por método más el envoltorio
+  `ResponseEntity`. En `BookServiceTest` rellenamos los tres casos que eran
+  esqueletos con comentarios (orden de inserción, `update` que conserva el id de
+  la ruta y borrado selectivo). Resultado: 13 pruebas en verde.
+
+- **Decisión: clase concreta con `@Service`, no interfaz más implementación.**
+  Solo hay una implementación y el contrato pide una clase o una interfaz; con
+  una clase se evita un archivo y una indirección que no aporta nada todavía.
+  `@MockitoBean` puede sustituir la clase igual de bien.
+
+- **Decisiones sobre capas y contrato HTTP.** El servicio no conoce tipos HTTP:
+  no devuelve `ResponseEntity` ni construye `Location`. La cabecera se sigue
+  montando en el controlador con el `id` del DTO que devuelve el servicio, de
+  modo que cuerpo y cabecera no divergen. `get` de un id inexistente devuelve
+  `null` y el controlador responde `200` con cuerpo vacío.
+
+- **Contribuciones, revisión y siguiente paso.** Irene escribió el controlador
+  delgado y el esqueleto de `BookServiceTest` (PR #7), pero el `BookService` no
+  llegó a Git. Jordi reconstruyó el servicio a partir del contrato, rellenó los
+  tres tests vacíos y actualizó README, aprendizaje y equipo; la revisión del
+  slice completo es suya. El siguiente paso es la entrega 5: excepciones propias
+  desde el servicio y mapeo local de `404` y `400`.
+
+```text
+Tests run: 5, Failures: 0, Errors: 0 -- BookCheckpoint04Test
+Tests run: 5, Failures: 0, Errors: 0 -- BookServiceTest
+Tests run: 1, Failures: 0, Errors: 0 -- EscrituraPropiaTest
+Tests run: 1, Failures: 0, Errors: 0 -- BookListadoJsonTest
+Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
+Tests run: 13, Failures: 0, Errors: 0 -- total
+```
+
 ## Plantilla para las siguientes entregas
 
 ```markdown
