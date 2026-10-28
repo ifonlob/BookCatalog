@@ -53,6 +53,8 @@
    `DELETE /books/42` responde `200` aunque el recurso no exista y nunca se
    devuelve `404`. 
 
+![Evidencia](./imgs/evidencia1.png)
+
 ## Plantilla para las siguientes entregas
 
 ```markdown
