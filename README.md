@@ -104,20 +104,22 @@ La **sesión 5 de Battleship** enseña el advice que se aplica a la **entrega 6 
 Book Catalog**. No confundir los dos números. Al acabar, cada integrante debe
 poder ejecutar y defender su slice, sus pruebas y su contribución en Git.
 
-## 6. Contrato implementado — Entrega 2 (JSON en memoria)
+## 6. Contrato implementado — Entrega 3 (`ResponseEntity`)
 
-Estado del contrato tras la entrega 2. Los datos viven en un
+Estado del contrato tras la entrega 3. Los datos viven en un
 `Map<Long, Book>` dentro del controlador y se pierden al parar la aplicación.
 La entrada y la salida usan DTOs (`BookRequestDTO` y `BookResponseDTO`); el
-modelo interno `Book` no se expone.
+modelo interno `Book` no se expone. Todos los métodos devuelven `ResponseEntity`
+para que el código de estado y las cabeceras sean explícitos y no dependan de lo
+que Spring elija por defecto.
 
 | Verbo | Ruta | Estado | Cuerpo de la respuesta |
 |---|---|---|---|
 | `GET` | `/books` | `200` | array JSON; `[]` si el catálogo está vacío |
 | `GET` | `/books/{id}` | `200` | libro o cuerpo vacío si no existe |
-| `POST` | `/books` | `200` | libro creado con `id` generado por el servidor |
+| `POST` | `/books` | `201` | libro creado + `Location: /books/{id}` |
 | `PUT` | `/books/{id}` | `200` | libro actualizado, conserva el `id` de la ruta |
-| `DELETE` | `/books/{id}` | `200` | sin cuerpo |
+| `DELETE` | `/books/{id}` | `204` | sin cuerpo |
 
 Entrada JSON:
 
@@ -139,12 +141,15 @@ Ejemplos con `curl`:
 # listado (vacío en un arranque limpio)
 curl -i http://localhost:8080/books
 
-# alta: el id lo genera la aplicación
+# alta: el id lo genera la aplicación y la respuesta trae la Location
 curl -i -X POST http://localhost:8080/books \
   -H 'Content-Type: application/json' \
   -d '{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}'
+# HTTP/1.1 201
+# Location: /books/1
+# {"id":1,"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
 
-# consulta usando el id devuelto
+# consulta reutilizando la Location devuelta
 curl -i http://localhost:8080/books/1
 
 # modificación completa (reemplaza título y año, mismo id)
@@ -152,25 +157,34 @@ curl -i -X PUT http://localhost:8080/books/1 \
   -H 'Content-Type: application/json' \
   -d '{"isbn":"978-1","title":"DDD 2.ª ed.","author":"Evans","year":2004}'
 
-# borrado
+# borrado: 204 y cuerpo vacío
 curl -i -X DELETE http://localhost:8080/books/1
 ```
 
 Decisiones de esta etapa:
 
-- El alta devuelve **`200`**, no `201`: el `201` con `Location` y el `204` del
-  borrado se introducen en la entrega 3 con `ResponseEntity`.
-- `GET`, `PUT` y `DELETE` sobre un id inexistente no fallan todavía (responden
-  `200` con cuerpo vacío o sin efecto). Las excepciones propias y el `404`
-  llegan en la entrega 5.
-- La colección y la generación de ids viven en el controlador porque la capa de
+- La `Location` es **relativa** y se construye con
+  `URI.create("/books/" + dto.id())`, no con `ServletUriComponentsBuilder`. El
+  *builder* produciría una URL absoluta (`http://localhost:8080/books/1`)
+  atada al host y al puerto de la petición: no es portable entre entornos y no
+  coincide con la ruta que se compara en las pruebas. Una `Location` relativa
+  la resuelve el cliente contra el host de la petición, así que sigue siendo
+  utilizable: el test hace `GET` directamente sobre el valor devuelto.
+- El `id` de la cabecera sale del DTO que se devuelve en el cuerpo, de modo que
+  ambos no pueden divergir.
+- `DELETE` responde **`204`** sin cuerpo (`ResponseEntity.noContent().build()`),
+  también cuando el id no existía: sin excepciones propias no hay forma de
+  distinguir «borrado» de «no encontrado», y el `404` llega en la entrega 5.
+- `GET` y `PUT` conservan `200` con representación; en esta etapa solo cambia la
+  semántica del alta y del borrado.
+- La colección y la generación de ids siguen en el controlador porque la capa de
   servicio se extrae en la entrega 4. `PUT` hace un reemplazo completo: no
   conserva campos que no vengan en el cuerpo.
 
-Pruebas que cubren este contrato:
+Pruebas que cubren este contrato (`./mvnw test`: 6 en verde):
 
 | Test | Qué verifica |
 |---|---|
-| `BookCheckpoint02Test` (semilla) | listado vacío, alta + consulta y actualización + borrado |
+| `BookCheckpoint03Test` (semilla) | `201` + `Location` utilizable, `204` sin cuerpo y `PUT` con representación |
+| `EscrituraPropiaTest` (propia) | flujo completo crear → consultar → actualizar → borrar; compara la `Location` exacta con el `id` |
 | `BookListadoJsonTest` (propia) | `GET /books` responde `200` con `Content-Type: application/json` y `[]` |
-| `EscrituraPropiaTest` (propia) | flujo completo crear → consultar → actualizar → borrar |
