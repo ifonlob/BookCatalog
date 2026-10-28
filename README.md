@@ -103,3 +103,74 @@ alternativas por cada etapa ni se piden capturas como evidencia principal.
 La **sesión 5 de Battleship** enseña el advice que se aplica a la **entrega 6 de
 Book Catalog**. No confundir los dos números. Al acabar, cada integrante debe
 poder ejecutar y defender su slice, sus pruebas y su contribución en Git.
+
+## 6. Contrato implementado — Entrega 2 (JSON en memoria)
+
+Estado del contrato tras la entrega 2. Los datos viven en un
+`Map<Long, Book>` dentro del controlador y se pierden al parar la aplicación.
+La entrada y la salida usan DTOs (`BookRequestDTO` y `BookResponseDTO`); el
+modelo interno `Book` no se expone.
+
+| Verbo | Ruta | Estado | Cuerpo de la respuesta |
+|---|---|---|---|
+| `GET` | `/books` | `200` | array JSON; `[]` si el catálogo está vacío |
+| `GET` | `/books/{id}` | `200` | libro o cuerpo vacío si no existe |
+| `POST` | `/books` | `200` | libro creado con `id` generado por el servidor |
+| `PUT` | `/books/{id}` | `200` | libro actualizado, conserva el `id` de la ruta |
+| `DELETE` | `/books/{id}` | `200` | sin cuerpo |
+
+Entrada JSON:
+
+```json
+{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
+```
+
+Salida JSON:
+
+```json
+{"id":1,"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
+```
+
+Ejemplos con `curl`:
+
+```bash
+./mvnw spring-boot:run
+
+# listado (vacío en un arranque limpio)
+curl -i http://localhost:8080/books
+
+# alta: el id lo genera la aplicación
+curl -i -X POST http://localhost:8080/books \
+  -H 'Content-Type: application/json' \
+  -d '{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}'
+
+# consulta usando el id devuelto
+curl -i http://localhost:8080/books/1
+
+# modificación completa (reemplaza título y año, mismo id)
+curl -i -X PUT http://localhost:8080/books/1 \
+  -H 'Content-Type: application/json' \
+  -d '{"isbn":"978-1","title":"DDD 2.ª ed.","author":"Evans","year":2004}'
+
+# borrado
+curl -i -X DELETE http://localhost:8080/books/1
+```
+
+Decisiones de esta etapa:
+
+- El alta devuelve **`200`**, no `201`: el `201` con `Location` y el `204` del
+  borrado se introducen en la entrega 3 con `ResponseEntity`.
+- `GET`, `PUT` y `DELETE` sobre un id inexistente no fallan todavía (responden
+  `200` con cuerpo vacío o sin efecto). Las excepciones propias y el `404`
+  llegan en la entrega 5.
+- La colección y la generación de ids viven en el controlador porque la capa de
+  servicio se extrae en la entrega 4. `PUT` hace un reemplazo completo: no
+  conserva campos que no vengan en el cuerpo.
+
+Pruebas que cubren este contrato:
+
+| Test | Qué verifica |
+|---|---|
+| `BookCheckpoint02Test` (semilla) | listado vacío, alta + consulta y actualización + borrado |
+| `BookListadoJsonTest` (propia) | `GET /books` responde `200` con `Content-Type: application/json` y `[]` |
+| `EscrituraPropiaTest` (propia) | flujo completo crear → consultar → actualizar → borrar |

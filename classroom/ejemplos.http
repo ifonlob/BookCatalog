@@ -21,6 +21,19 @@ Content-Type: application/json
 ### Usar el id/Location devuelto, no suponer un libro precargado
 GET {{base}}/books/1
 
+### Listado JSON (entrega 2)
+GET {{base}}/books
+Accept: application/json
+
+### Modificación JSON (entrega 2; sustituir el 1 por el id devuelto)
+PUT {{base}}/books/1
+Content-Type: application/json
+
+{"isbn":"978-1","title":"DDD 2.ª ed.","author":"Evans","year":2004}
+
+### Borrado (entrega 2; sustituir el 1 por el id devuelto)
+DELETE {{base}}/books/1
+
 ### Desde entrega 6: validación 400 con payload
 POST {{base}}/books
 Content-Type: application/json

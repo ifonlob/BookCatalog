@@ -75,8 +75,10 @@
   comportamiento, no de compilación: `startsWithEmptyJsonList` ya pasaba porque
   el controlador devolvía una lista vacía, pero `createsAndRetrievesJson` y
   `updatesAndDeletesInMemory` fallaban al recibir texto en lugar de JSON.
-  Escribimos además `EscrituraPropiaTest`, que cubre el flujo completo
-  crear → consultar → actualizar → borrar → comprobar catálogo vacío.
+  Escribimos además dos pruebas propias: `EscrituraPropiaTest`, que cubre el
+  flujo completo crear → consultar → actualizar → borrar → comprobar catálogo
+  vacío, y `BookListadoJsonTest`, que fija el `Content-Type: application/json`
+  del listado (un detalle que la semilla no comprueba).
 
 - **Cambio mínimo y resultado verde.** El cambio se limita al controlador y a
   los tipos del contrato: `POST` recibe `@RequestBody BookRequestDTO`, asigna
@@ -85,8 +87,8 @@
   cambia aunque el cliente envíe otro. `DELETE` elimina del mapa. Toda la
   conversión a salida pasa por un único `toDto(...)`, reutilizado por listado,
   consulta, alta y modificación, para que el DTO no se construya de cuatro
-  forma distinta. Resultado: 5 pruebas en verde, las tres de la semilla, la
-  propia y el test de contexto.
+  forma distinta. Resultado: 6 pruebas en verde: las tres de la semilla,
+  `EscrituraPropiaTest`, `BookListadoJsonTest` y el test de contexto.
 
 - **Decisiones sobre capas y contrato HTTP.** La colección vive todavía en el
   controlador porque la entrega 4 es la que extrae el servicio. No adelantamos
@@ -113,14 +115,17 @@
 - **Contribuciones, revisión y siguiente paso.** Irene aportó `Book`,
   `BookResponseDTO` y los `GET`. Jordi aportó `BookRequestDTO`, la colección en
   memoria, la generación de ids, `POST`, `PUT`, `DELETE` y
-  `EscrituraPropiaTest`. El siguiente paso es la entrega 3: `201` con
+  `EscrituraPropiaTest`; Irene añadió `BookListadoJsonTest` para fijar el
+  contrato JSON del listado. El siguiente paso es la entrega 3: `201` con
   `Location` utilizable en el alta, `204` sin cuerpo en el borrado y
   `ResponseEntity` en los endpoints.
 
 ```text
 Tests run: 3, Failures: 0, Errors: 0 -- BookCheckpoint02Test
 Tests run: 1, Failures: 0, Errors: 0 -- EscrituraPropiaTest
+Tests run: 1, Failures: 0, Errors: 0 -- BookListadoJsonTest
 Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
+Tests run: 6, Failures: 0, Errors: 0 -- total
 ```
 
 ## Plantilla para las siguientes entregas
