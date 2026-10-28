@@ -4,6 +4,7 @@ import com.example.catalog.dto.BookRequestDTO;
 import com.example.catalog.dto.BookResponseDTO;
 import com.example.catalog.model.Book;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,14 +19,14 @@ public class BookController {
     private final AtomicLong ids = new AtomicLong(1);
 
     @GetMapping
-    public List<BookResponseDTO> list() {
-        return books.values().stream().map(this::toDto).toList();
+    public ResponseEntity<List<BookResponseDTO>> list() {
+        return ResponseEntity.ok(books.values().stream().map(this::toDto).toList());
     }
 
     @GetMapping("/{id}")
-    public BookResponseDTO getOne(@PathVariable("id") Long id) {
+    public ResponseEntity<BookResponseDTO> getOne(@PathVariable("id") Long id) {
         Book book = books.get(id);
-        return book == null ? null : toDto(book);
+        return ResponseEntity.ok(book == null ? null : toDto(book));
     }
 
     @PostMapping
@@ -37,10 +38,12 @@ public class BookController {
     }
 
     @PutMapping("/{id}")
-    public BookResponseDTO update(@PathVariable("id") Long id, @RequestBody BookRequestDTO request) {
-        Book book = new Book(id, request.isbn(), request.title(), request.author(), request.year());
+    public ResponseEntity<BookResponseDTO> update(@PathVariable("id") Long id,
+                                                  @RequestBody BookRequestDTO request) {
+        Book book = new Book(id, request.isbn(), request.title(),
+                request.author(), request.year());
         books.put(id, book);
-        return toDto(book);
+        return ResponseEntity.ok(toDto(book));
     }
 
     @DeleteMapping("/{id}")
