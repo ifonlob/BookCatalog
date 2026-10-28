@@ -12,7 +12,7 @@
 | 1 — Eco de texto | Ejecuta la app, documenta las respuestas HTTP y redacta las respuestas de comprensión. | Verifica el contrato con `curl -i`, revisa el cambio y actualiza las evidencias de equipo. |
 | 2 — JSON | `Book`, `BookResponseDTO` y los `GET`. | `BookRequestDTO`, colección en memoria, generación de ids, `POST`, `PUT` y `DELETE`. |
 | 3 — `ResponseEntity` | `ResponseEntity.ok` en consultas y revisión del contrato. | `201` + `Location` en el alta y `204` en el borrado. |
-| 4 — Servicio | `list()` y `get(Long)` + tests unitarios del servicio. | `create`, `update` y `delete` + controlador delgado. |
+| 4 — Servicio | Servicio completo (`BookService` con `@Service`, `LinkedHashMap` + `AtomicLong`), controlador delgado y `BookServiceTest`. El reparto se invirtió respecto al plan: asumió también `create`/`update`/`delete`, aunque el `BookService` no llegó a Git en su PR. | Revisión del slice completo de la entrega 4 y reconstrucción del `BookService` que faltaba, más el relleno de los tres tests vacíos de `BookServiceTest`. |
 | 5 — Excepciones | `BookNotFoundException` lanzada desde `get` y su mapeo a `404`. | `InvalidBookException` desde `create`/`update` y su mapeo a `400`. |
 | 6 — Advice global | `GlobalExceptionHandler` para `NOT_FOUND` y `VALIDATION_ERROR`. | `BAD_REQUEST` por JSON ilegible, `INTERNAL_ERROR` inesperado y `@Valid` en el DTO. |
 | Cierre | README, `ejemplos.http` y pruebas MockMvc de consulta. | CI, regresión del CRUD real y pruebas de escritura. |

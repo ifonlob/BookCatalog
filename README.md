@@ -177,14 +177,43 @@ Decisiones de esta etapa:
   distinguir «borrado» de «no encontrado», y el `404` llega en la entrega 5.
 - `GET` y `PUT` conservan `200` con representación; en esta etapa solo cambia la
   semántica del alta y del borrado.
-- La colección y la generación de ids siguen en el controlador porque la capa de
-  servicio se extrae en la entrega 4. `PUT` hace un reemplazo completo: no
-  conserva campos que no vengan en el cuerpo.
+- La colección y la generación de ids seguían en el controlador en esta etapa;
+  la entrega 4 las traslada al servicio (ver sección 7). `PUT` hace un reemplazo
+  completo: no conserva campos que no vengan en el cuerpo.
 
-Pruebas que cubren este contrato (`./mvnw test`: 6 en verde):
+Pruebas que cubren este contrato (`./mvnw test`: 13 en verde):
 
 | Test | Qué verifica |
 |---|---|
-| `BookCheckpoint03Test` (semilla) | `201` + `Location` utilizable, `204` sin cuerpo y `PUT` con representación |
-| `EscrituraPropiaTest` (propia) | flujo completo crear → consultar → actualizar → borrar; compara la `Location` exacta con el `id` |
+| `BookCheckpoint04Test` (semilla) | con `@MockitoBean`, que el controlador delega en `BookService` y usa el `id` devuelto para una `Location` exacta `/books/17` |
+| `BookServiceTest` (propia) | el servicio real: ids incrementales, orden de inserción, `update` con el id de la ruta, borrado selectivo y `get` inexistente |
+| `EscrituraPropiaTest` (propia) | regresión del CRUD real: crear → consultar → actualizar → borrar, con `201` y `204` |
 | `BookListadoJsonTest` (propia) | `GET /books` responde `200` con `Content-Type: application/json` y `[]` |
+| `CatalogApplicationTests` | el contexto de la aplicación arranca |
+
+## 7. Arquitectura — entrega 4 (servicio)
+
+El contrato HTTP **no cambia**: `201` + `Location` en el alta, `204` sin cuerpo en
+el borrado y `200` con representación en consulta y modificación. Lo que cambia
+es dónde vive el estado y quién aplica las reglas.
+
+```text
+Petición HTTP → BookController → BookService → Map<Long, Book> en memoria
+                    │                 │
+              ResponseEntity      DTOs y reglas
+```
+
+- El controlador recibe `BookService` **por constructor** y queda reducido a
+  traducir HTTP: rutas, `@RequestBody`, códigos de estado y la cabecera
+  `Location`. Ya no guarda la colección ni genera ids.
+- `BookService` es una clase concreta anotada con `@Service`. Guarda un
+  `LinkedHashMap<Long, Book>` (mantiene el orden de inserción del listado) y un
+  `AtomicLong` para los ids. Devuelve `BookRequestDTO`/`BookResponseDTO` y no
+  conoce tipos HTTP: ni `ResponseEntity` ni `Location` dentro del servicio.
+- La semilla de este checkpoint es `@WebMvcTest(BookController.class)` con
+  `@MockitoBean BookService`: prueba **solo la delegación** y que el controlador
+  usa el `id` devuelto por el servicio para construir la `Location`. No
+  demuestra que los libros se guarden.
+- Esa parte la cubren los tests propios: `BookServiceTest`, unitario y sin
+  Spring, y `EscrituraPropiaTest`, que sigue siendo la regresión del CRUD real
+  contra la aplicación completa.
