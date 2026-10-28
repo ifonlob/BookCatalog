@@ -7,8 +7,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -20,14 +23,17 @@ class EscrituraPropiaTest {
 
     @Test
     void creatingUpdatingAndDeletingKeepsTheSameId() throws Exception {
-        String created = mvc.perform(post("/books").contentType("application/json").content("""
+        MvcResult result = mvc.perform(post("/books").contentType("application/json").content("""
                         {"isbn":"978-84-1","title":"El nombre del viento","author":"Rothfuss","year":2007}
                         """))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", startsWith("/books/")))
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.title").value("El nombre del viento"))
-                .andReturn().getResponse().getContentAsString();
+                .andReturn();
+        String created = result.getResponse().getContentAsString();
         long id = ((Number) JsonPath.read(created, "$.id")).longValue();
+        assertEquals("/books/" + id, result.getResponse().getHeader("Location"));
 
         mvc.perform(get("/books/" + id))
                 .andExpect(status().isOk())
@@ -45,7 +51,8 @@ class EscrituraPropiaTest {
                 .andExpect(jsonPath("$.year").value(2011));
 
         mvc.perform(delete("/books/" + id))
-                .andExpect(status().isOk());
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
 
         mvc.perform(get("/books"))
                 .andExpect(status().isOk())
