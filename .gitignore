@@ -6,3 +6,5 @@ target/
 *.log
 .DS_Store
 .mvn/wrapper/maven-wrapper.jar
+
+classroom/entrega-activa.txt
