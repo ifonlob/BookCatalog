@@ -27,8 +27,12 @@ public class BookService {
 
     public BookResponseDTO get(Long id) {
         Book book = books.get(id);
-        return book == null ? null : toDto(book);
+        if (book == null) {
+            throw new BookNotFoundException("No existe el libro " + id);
+        }
+        return toDto(book);
     }
+
 
     public BookResponseDTO create(BookRequestDTO request) {
         validate(request);
@@ -41,6 +45,9 @@ public class BookService {
     }
 
     public BookResponseDTO update(Long id, BookRequestDTO request) {
+        if (!books.containsKey(id)) {
+            throw new BookNotFoundException("No existe el libro " + id);
+        }
         validate(request);
 
         Book book = new Book(id, request.isbn(), request.title(),
@@ -51,6 +58,9 @@ public class BookService {
     }
 
     public void delete(Long id) {
+        if (books.remove(id) == null) {
+            throw new BookNotFoundException("No existe el libro " + id);
+        }
         books.remove(id);
     }
 
