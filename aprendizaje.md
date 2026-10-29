@@ -241,6 +241,57 @@ Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
 Tests run: 13, Failures: 0, Errors: 0 -- total
 ```
 
+## Entrega 5
+
+- **Comportamiento que añadimos o contrato que evolucionamos.** La API deja de
+  responder con éxito cuando el recurso no existe o la entrada no vale. En
+  `com.example.catalog.service` aparecen dos excepciones de aplicación,
+  `BookNotFoundException` e `InvalidBookException`, ambas `RuntimeException`. El
+  servicio las lanza `get`, `update` y `delete` con un id inexistente;
+  `create` y `update` con `isbn`, `title` o `author` en blanco o `year`
+  negativo y el controlador las traduce **localmente** con `@ExceptionHandler`:
+  `404` y `400`. El contrato de éxito no se toca: `201` + `Location`, `204` y
+  `200` siguen igual.
+
+- **Test y rojo observado.** El rojo llegó en dos fases, y distinguirlas fue lo
+  útil. Primero, al activar `BookCheckpoint05Test`, la compilación fallaba porque
+  las dos excepciones no existían todavía
+  (`cannot find symbol: class BookNotFoundException`): eso es estructura, no
+  comportamiento. Al crearlas, el rojo pasó a ser de comportamiento: los tres
+  escenarios de la semilla recibían `200` en la consulta y el alta, y `204` en el
+  borrado, donde el contrato espera `404`, `400` y `404`. La semilla, además,
+  usa `@MockitoBean`, así que lo que prueba es que el controlador **traduce** la
+  excepción, no que el servicio la lance.
+
+- **Cambio mínimo y resultado verde.** `get` deja de devolver `null` y lanza
+  `BookNotFoundException`; `delete` comprueba el resultado de `remove` y lanza la
+  misma excepción; `update` comprueba la existencia **antes** de validar, para
+  que un id inexistente no acabe en `400`. En el servicio, `create` y `update`
+  llaman a `validate`, que lanza `InvalidBookException` con las reglas acordadas.
+  En el controlador, dos métodos `@ExceptionHandler` devuelven
+  `ResponseEntity.notFound()` y `badRequest()`. La suite pasa de 13 a 22 pruebas
+  en verde.
+
+- **Decisiones sobre capas y contrato HTTP.** Descartamos `@ResponseStatus` en
+  las excepciones: fijaría el código HTTP dentro de `service`, que es justo la
+  capa que no debe conocer HTTP, y en la entrega 6 el mapeo se sustituye por un
+  `@RestControllerAdvice`. Tampoco adelantamos un cuerpo de error uniforme: en
+  esta etapa el contrato solo pide el código, y el JSON con `error`, `message` y
+  `timestamp` es de la entrega 6. Se mantiene la regla de no usar `404` para
+  todo: `400` es para entradas rechazadas y `404` para recursos inexistentes.
+  Esto cambia el comportamiento de `PUT` y `DELETE`, que antes no distinguían un
+  id que no existía.
+
+```text
+Tests run: 3, Failures: 0, Errors: 0 -- BookCheckpoint05Test
+Tests run: 10, Failures: 0, Errors: 0 -- BookServiceTest
+Tests run: 6, Failures: 0, Errors: 0 -- ErroresPropiosTest
+Tests run: 1, Failures: 0, Errors: 0 -- EscrituraPropiaTest
+Tests run: 1, Failures: 0, Errors: 0 -- BookListadoJsonTest
+Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
+Tests run: 22, Failures: 0, Errors: 0 -- total
+```
+
 ## Plantilla para las siguientes entregas
 
 ```markdown
