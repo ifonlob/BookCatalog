@@ -30,6 +30,7 @@ public class BookService {
     }
 
     public BookResponseDTO create(BookRequestDTO request) {
+        validate(request);
         Book book = new Book(ids.getAndIncrement(), request.isbn(), request.title(),
                 request.author(), request.year());
         books.put(book.getId(), book);
@@ -37,6 +38,7 @@ public class BookService {
     }
 
     public BookResponseDTO update(Long id, BookRequestDTO request) {
+        validate(request);
         Book book = new Book(id, request.isbn(), request.title(), request.author(), request.year());
         books.put(id, book);
         return toDto(book);
@@ -44,6 +46,19 @@ public class BookService {
 
     public void delete(Long id) {
         books.remove(id);
+    }
+
+    private void validate(BookRequestDTO request) {
+        if (isBlank(request.isbn()) || isBlank(request.title()) || isBlank(request.author())) {
+            throw new InvalidBookException("isbn, title y author son obligatorios");
+        }
+        if (request.year() < 0) {
+            throw new InvalidBookException("year no puede ser negativo");
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 
     private BookResponseDTO toDto(Book book) {
