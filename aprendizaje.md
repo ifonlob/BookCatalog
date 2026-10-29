@@ -292,6 +292,62 @@ Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
 Tests run: 22, Failures: 0, Errors: 0 -- total
 ```
 
+## Entrega 6
+
+- **Comportamiento que añadimos o contrato que evolucionamos.** Los errores
+  pasan a tener un formato único. Se crea
+  `com.example.catalog.web.GlobalExceptionHandler` con `@RestControllerAdvice` y
+  se retiran los `@ExceptionHandler` locales del controlador. Todas las
+  respuestas de error llevan `error`, `message` y `timestamp`: `404`/`NOT_FOUND`,
+  `400`/`BAD_REQUEST` (`InvalidBookException` y JSON ilegible),
+  `400`/`VALIDATION_ERROR` y `500`/`INTERNAL_ERROR`. Las entradas se validan con
+  Bean Validation (`@NotBlank` en `isbn`, `title` y `author`, `@Min(0)` en
+  `year`) activada con `@Valid` en el alta y la modificación. El éxito no cambia.
+
+- **Test y rojo observado.** Otra vez en dos fases. Al activar la semilla 6 la
+  compilación fallaba porque `GlobalExceptionHandler` no existía. Una vez creado
+  el advice con los dos handlers de consulta, el rojo se volvió más informativo:
+  `InvalidBookException` y `RuntimeException` escapaban al contenedor
+  (`Request processing failed`), el JSON malformado devolvía `400` de Spring sin
+  cuerpo (`No value at JSON path "$.error"`) y el caso de validación ni siquiera
+  llegaba al advice: sin `@Valid` el `title` en blanco entraba al controlador y
+  el mock devolvía `null`, con un `NullPointerException` al leer `dto.id()`. Eso
+  confirmó que el problema era de mapeo y de validación, no del contrato.
+
+- **Cambio mínimo y resultado verde.** En el advice, cinco handlers con un
+  `ApiError` común y un `build(...)` que sella `Instant.now()`. En el DTO, las
+  anotaciones de Bean Validation; en el controlador, `@Valid` en `create` y
+  `update`. Se eliminan los dos handlers locales. Resultado: 26 pruebas en verde,
+  con los `201`/`204`/`200` intactos.
+
+- **Decisiones sobre capas y contrato HTTP.** El `500` devuelve el texto literal
+  `Unexpected error` y nunca el mensaje de la excepción: es la única forma de
+  garantizar que un detalle interno no se filtre. `BAD_REQUEST` se usa para dos
+  situaciones distintas —JSON ilegible y rechazo del servicio— porque el
+  contrato las agrupa bajo el mismo código. `VALIDATION_ERROR` se distingue de
+  `BAD_REQUEST` para que el cliente sepa que el problema está en los campos, y
+  se comprueba que en ese caso el servicio no se invoca. El `timestamp` se genera
+  por respuesta, no al arrancar.
+
+- **Contribuciones, revisión y siguiente paso.** Jordi aportó `@Valid` y las
+  restricciones del DTO, el mapeo de `InvalidBookException` y del JSON ilegible,
+  el `500` sin detalles y sus pruebas. Irene aportó el advice base con
+  `ApiError`, los handlers de `NOT_FOUND` y `VALIDATION_ERROR`, la retirada del
+  mapeo local, `AdvicePropioTest` y la documentación. Con esto se cierran los
+  seis checkpoints: queda la declaración de uso de IA, la revisión final del
+  README y la comprobación de que la CI de `main` está verde.
+
+```text
+Tests run: 6, Failures: 0, Errors: 0 -- BookCheckpoint06Test
+Tests run: 1, Failures: 0, Errors: 0 -- AdvicePropioTest
+Tests run: 6, Failures: 0, Errors: 0 -- ErroresPropiosTest
+Tests run: 10, Failures: 0, Errors: 0 -- BookServiceTest
+Tests run: 1, Failures: 0, Errors: 0 -- EscrituraPropiaTest
+Tests run: 1, Failures: 0, Errors: 0 -- BookListadoJsonTest
+Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
+Tests run: 26, Failures: 0, Errors: 0 -- total
+```
+
 ## Plantilla para las siguientes entregas
 
 ```markdown

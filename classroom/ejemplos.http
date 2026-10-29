@@ -34,7 +34,7 @@ Content-Type: application/json
 ### Borrado desde la entrega 3: 204 sin cuerpo (sustituir el 1 por el id devuelto)
 DELETE {{base}}/books/1
 
-### Entrega 5 — errores propios: recursos inexistentes → 404 sin cuerpo
+### Entrega 5 — errores propios: recursos inexistentes → 404 (el cuerpo llega en la entrega 6)
 ### Consulta de un id que no existe
 GET {{base}}/books/999
 
@@ -49,7 +49,7 @@ Content-Type: application/json
 ### Borrado de un id que no existe (404, no 204)
 DELETE {{base}}/books/999
 
-### Entrega 5 — errores propios: entrada rechazada → 400 sin cuerpo
+### Entrega 5 — errores propios: entrada rechazada → 400 (el cuerpo llega en la entrega 6)
 ### isbn en blanco
 POST {{base}}/books
 Content-Type: application/json
@@ -88,7 +88,35 @@ Content-Type: application/json
 ### (mismo id que en la modificación anterior)
 GET {{base}}/books/2
 
-### Entrega 6: cuerpo de error uniforme (error, message, timestamp) — aún no implementadoPOST {{base}}/books
+### Entrega 6: cuerpo de error uniforme (error, message, timestamp)
+POST {{base}}/books
 Content-Type: application/json
 
 {"isbn":"978-1","title":" ","author":"Evans","year":2003}
+
+#### Respuesta esperada: 400
+#### {"error":"VALIDATION_ERROR","message":"title: title es obligatorio","timestamp":"..."}
+
+###
+### JSON ilegible → 400 BAD_REQUEST (ni siquiera llega al controlador)
+POST {{base}}/books
+Content-Type: application/json
+
+{
+
+#### Respuesta esperada: 400
+#### {"error":"BAD_REQUEST","message":"El cuerpo JSON no es legible","timestamp":"..."}
+
+###
+### Recurso inexistente → 404 NOT_FOUND con cuerpo
+GET {{base}}/books/999
+
+#### Respuesta esperada: 404
+#### {"error":"NOT_FOUND","message":"No existe el libro 999","timestamp":"..."}
+
+###
+### El éxito no cambia: 201 + Location relativa
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
