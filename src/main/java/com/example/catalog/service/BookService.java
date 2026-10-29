@@ -1,3 +1,4 @@
+
 package com.example.catalog.service;
 
 import com.example.catalog.dto.BookRequestDTO;
@@ -31,15 +32,20 @@ public class BookService {
 
     public BookResponseDTO create(BookRequestDTO request) {
         validate(request);
+
         Book book = new Book(ids.getAndIncrement(), request.isbn(), request.title(),
                 request.author(), request.year());
+
         books.put(book.getId(), book);
         return toDto(book);
     }
 
     public BookResponseDTO update(Long id, BookRequestDTO request) {
         validate(request);
-        Book book = new Book(id, request.isbn(), request.title(), request.author(), request.year());
+
+        Book book = new Book(id, request.isbn(), request.title(),
+                request.author(), request.year());
+
         books.put(id, book);
         return toDto(book);
     }
@@ -49,9 +55,12 @@ public class BookService {
     }
 
     private void validate(BookRequestDTO request) {
-        if (isBlank(request.isbn()) || isBlank(request.title()) || isBlank(request.author())) {
-            throw new InvalidBookException("isbn, title y author son obligatorios");
+        if (isBlank(request.isbn()) || isBlank(request.title())
+                || isBlank(request.author())) {
+            throw new InvalidBookException(
+                    "isbn, title y author son obligatorios");
         }
+
         if (request.year() < 0) {
             throw new InvalidBookException("year no puede ser negativo");
         }

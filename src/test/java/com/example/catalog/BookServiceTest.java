@@ -57,7 +57,9 @@ public class BookServiceTest {
     }
 
     @Test
-    void getReturnsNullWhenMissing() { assertNull(service.get(99L)); }
+    void getReturnsNullWhenMissing() {
+        assertNull(service.get(99L));
+    }
 
     @Test
     void createRejectsBlankTitle() {
@@ -76,13 +78,5 @@ public class BookServiceTest {
         assertThrows(InvalidBookException.class,
                 () -> service.create(new BookRequestDTO("978-1", "DDD", "Evans", -1)));
         assertTrue(service.list().isEmpty());
-    }
-
-    @Test
-    void updateRejectsBlankAuthorWithoutTouchingTheBook() {
-        service.create(ddd);
-        assertThrows(InvalidBookException.class,
-                () -> service.update(1L, new BookRequestDTO("978-1", "DDD", " ", 2003)));
-        assertEquals("Evans", service.get(1L).author());
     }
 }

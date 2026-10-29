@@ -58,4 +58,22 @@ class EscrituraPropiaTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
+
+    @SpringBootTest
+    @AutoConfigureMockMvc
+    @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+    static
+    class ErroresPropiosTest {
+
+        @Autowired
+        MockMvc mvc;
+
+        @Test
+        void createRejectsInvalidPayloadWithBadRequest() throws Exception {
+            mvc.perform(post("/books")
+                            .contentType("application/json")
+                            .content("{\"isbn\":\"\",\"title\":\"DDD\",\"author\":\"Evans\",\"year\":2003}"))
+                    .andExpect(status().isBadRequest());
+        }
+    }
 }
