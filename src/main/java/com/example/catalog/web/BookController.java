@@ -3,6 +3,7 @@ package com.example.catalog.web;
 import com.example.catalog.dto.BookRequestDTO;
 import com.example.catalog.dto.BookResponseDTO;
 import com.example.catalog.service.BookService;
+import com.example.catalog.service.InvalidBookException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,5 +44,10 @@ public class BookController {
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(InvalidBookException.class)
+    public ResponseEntity<Void> badRequest(InvalidBookException exception) {
+        return ResponseEntity.badRequest().build();
     }
 }
