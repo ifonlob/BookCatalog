@@ -2,6 +2,7 @@ package com.example.catalog.web;
 
 import com.example.catalog.dto.BookRequestDTO;
 import com.example.catalog.dto.BookResponseDTO;
+import com.example.catalog.service.BookNotFoundException;
 import com.example.catalog.service.BookService;
 import com.example.catalog.service.InvalidBookException;
 import org.springframework.http.ResponseEntity;
@@ -51,4 +52,9 @@ public class BookController {
     public ResponseEntity<Void> badRequest(InvalidBookException exception) {
         return ResponseEntity.badRequest().build();
     }
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<Void> notFound(BookNotFoundException exception) {
+        return ResponseEntity.notFound().build();
+    }
+
 }
