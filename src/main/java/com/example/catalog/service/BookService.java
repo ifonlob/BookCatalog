@@ -11,10 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * Reglas y almacenamiento del catálogo. No conoce tipos HTTP: devuelve DTOs y
- * la colección vive aquí, no en el controlador.
- */
 @Service
 public class BookService {
 
@@ -61,7 +57,6 @@ public class BookService {
         if (books.remove(id) == null) {
             throw new BookNotFoundException("No existe el libro " + id);
         }
-        books.remove(id);
     }
 
     private void validate(BookRequestDTO request) {
