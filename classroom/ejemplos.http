@@ -34,8 +34,61 @@ Content-Type: application/json
 ### Borrado desde la entrega 3: 204 sin cuerpo (sustituir el 1 por el id devuelto)
 DELETE {{base}}/books/1
 
-### Desde entrega 6: validación 400 con payload
+### Entrega 5 — errores propios: recursos inexistentes → 404 sin cuerpo
+### Consulta de un id que no existe
+GET {{base}}/books/999
+
+###
+### Modificación de un id que no existe (404: no se crea nada)
+PUT {{base}}/books/999
+Content-Type: application/json
+
+{"isbn":"978-1","title":"DDD","author":"Evans","year":2003}
+
+###
+### Borrado de un id que no existe (404, no 204)
+DELETE {{base}}/books/999
+
+### Entrega 5 — errores propios: entrada rechazada → 400 sin cuerpo
+### isbn en blanco
 POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"","title":"DDD","author":"Evans","year":2003}
+
+###
+### title en blanco
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-1","title":" ","author":"Evans","year":2003}
+
+###
+### year negativo
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-1","title":"DDD","author":"Evans","year":-1}
+
+###
+### La misma validación se aplica a la modificación (400 si el libro existe).
+### Sustituid el 2 por el id devuelto en el alta.
+POST {{base}}/books
+Content-Type: application/json
+
+{"isbn":"978-2","title":"TDD","author":"Beck","year":2002}
+
+###
+PUT {{base}}/books/2
+Content-Type: application/json
+
+{"isbn":"978-2","title":" ","author":"Beck","year":2002}
+
+### El rechazo no modifica el libro: esta consulta sigue devolviendo "TDD"
+### (mismo id que en la modificación anterior)
+GET {{base}}/books/2
+
+### Entrega 6: cuerpo de error uniforme (error, message, timestamp) — aún no implementadoPOST {{base}}/books
 Content-Type: application/json
 
 {"isbn":"978-1","title":" ","author":"Evans","year":2003}

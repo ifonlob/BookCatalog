@@ -181,12 +181,13 @@ Decisiones de esta etapa:
   la entrega 4 las traslada al servicio (ver sección 7). `PUT` hace un reemplazo
   completo: no conserva campos que no vengan en el cuerpo.
 
-Pruebas que cubren este contrato (`./mvnw test`: 13 en verde):
+Pruebas de la suite (`./mvnw test`: 22 en verde):
 
 | Test | Qué verifica |
 |---|---|
-| `BookCheckpoint04Test` (semilla) | con `@MockitoBean`, que el controlador delega en `BookService` y usa el `id` devuelto para una `Location` exacta `/books/17` |
-| `BookServiceTest` (propia) | el servicio real: ids incrementales, orden de inserción, `update` con el id de la ruta, borrado selectivo y `get` inexistente |
+| `BookCheckpoint05Test` (semilla) | con `@MockitoBean`, que el controlador traduce `BookNotFoundException` a `404`, `InvalidBookException` a `400` y sigue delegando en el alta |
+| `BookServiceTest` (propia) | el servicio real: ids incrementales, orden de inserción, `update` con el id de la ruta, borrado selectivo, entrada inválida y recurso inexistente |
+| `ErroresPropiosTest` (propia) | por HTTP: `400` en alta y modificación inválidas, y `404` en consulta, modificación y borrado de un id inexistente |
 | `EscrituraPropiaTest` (propia) | regresión del CRUD real: crear → consultar → actualizar → borrar, con `201` y `204` |
 | `BookListadoJsonTest` (propia) | `GET /books` responde `200` con `Content-Type: application/json` y `[]` |
 | `CatalogApplicationTests` | el contexto de la aplicación arranca |
@@ -217,3 +218,72 @@ Petición HTTP → BookController → BookService → Map<Long, Book> en memoria
 - Esa parte la cubren los tests propios: `BookServiceTest`, unitario y sin
   Spring, y `EscrituraPropiaTest`, que sigue siendo la regresión del CRUD real
   contra la aplicación completa.
+
+## 8. Errores — entrega 5 (excepciones propias)
+
+El servicio deja de responder «vacío» cuando algo no existe y pasa a lanzar
+excepciones de aplicación. El controlador las traduce a HTTP **de forma local**,
+todavía sin un formato de cuerpo común.
+
+| Situación | Excepción | Estado |
+|---|---|---:|
+| `GET /books/{id}` con id inexistente | `BookNotFoundException` | `404` |
+| `PUT /books/{id}` con id inexistente | `BookNotFoundException` | `404` |
+| `DELETE /books/{id}` con id inexistente | `BookNotFoundException` | `404` |
+| Alta o modificación con datos inválidos | `InvalidBookException` | `400` |
+
+```java
+public class BookNotFoundException extends RuntimeException {
+    public BookNotFoundException(String message) { super(message); }
+}
+```
+
+```java
+public class InvalidBookException extends RuntimeException {
+    public InvalidBookException(String message) { super(message); }
+}
+```
+
+Reglas de validación del servicio: `isbn`, `title` y `author` no pueden ser
+`null` ni estar en blanco, y `year` no puede ser negativo. La comprobación de
+existencia va **antes** que la de validez, de modo que un id inexistente siempre
+da `404` y no `400`.
+
+Mapeo local en el controlador:
+
+```java
+@ExceptionHandler(BookNotFoundException.class)
+public ResponseEntity<Void> notFound(BookNotFoundException exception) {
+    return ResponseEntity.notFound().build();
+}
+
+@ExceptionHandler(InvalidBookException.class)
+public ResponseEntity<Void> badRequest(InvalidBookException exception) {
+    return ResponseEntity.badRequest().build();
+}
+```
+
+Ejemplos con `curl`:
+
+```bash
+curl -i http://localhost:8080/books/999       # 404
+curl -i -X DELETE http://localhost:8080/books/999   # 404
+
+curl -i -X POST http://localhost:8080/books \
+  -H 'Content-Type: application/json' \
+  -d '{"isbn":"","title":"DDD","author":"Evans","year":2003}'   # 400
+```
+
+Decisiones de esta etapa:
+
+- **No** se usa `@ResponseStatus` en las excepciones: fijaría el código en la
+  capa de servicio y el contrato pide que el mapeo sea del controlador. En la
+  entrega 6 ese mapeo se mueve a un `@RestControllerAdvice`.
+- Las respuestas de error todavía **no llevan cuerpo uniforme**; solo el código.
+  El JSON con `error`, `message` y `timestamp` es de la entrega 6.
+- `get` deja de devolver `null`: el «`200` con cuerpo vacío» desaparece y se
+  convierte en `404`. Es el cambio de comportamiento que arrastra la etapa.
+- `PUT` y `DELETE` también distinguen el recurso inexistente (`404`) en lugar de
+  responder `200`/`204` sin efecto.
+- El `400` se reserva para entradas rechazadas; no se usa `404` como cajón de
+  sastre ni `null` en lugar de una excepción específica.
