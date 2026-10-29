@@ -3,6 +3,7 @@ package com.example.catalog;
 import com.example.catalog.dto.BookRequestDTO;
 import com.example.catalog.dto.BookResponseDTO;
 import com.example.catalog.service.BookService;
+import com.example.catalog.service.InvalidBookException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,6 +11,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BookServiceTest {
 
@@ -54,5 +57,26 @@ public class BookServiceTest {
     }
 
     @Test
-    void getReturnsNullWhenMissing() { assertNull(service.get(99L)); }
+    void getReturnsNullWhenMissing() {
+        assertNull(service.get(99L));
+    }
+
+    @Test
+    void createRejectsBlankTitle() {
+        assertThrows(InvalidBookException.class,
+                () -> service.create(new BookRequestDTO("978-1", " ", "Evans", 2003)));
+    }
+
+    @Test
+    void createRejectsNegativeYear() {
+        assertThrows(InvalidBookException.class,
+                () -> service.create(new BookRequestDTO("978-1", "DDD", "Evans", -1)));
+    }
+
+    @Test
+    void rejectedCreateStoresNothing() {
+        assertThrows(InvalidBookException.class,
+                () -> service.create(new BookRequestDTO("978-1", "DDD", "Evans", -1)));
+        assertTrue(service.list().isEmpty());
+    }
 }
