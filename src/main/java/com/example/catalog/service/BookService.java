@@ -57,6 +57,7 @@ public class BookService {
         if (books.remove(id) == null) {
             throw new BookNotFoundException("No existe el libro " + id);
         }
+        books.remove(id);
     }
 
     private void validate(BookRequestDTO request) {
