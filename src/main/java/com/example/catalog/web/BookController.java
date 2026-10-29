@@ -5,12 +5,12 @@ import com.example.catalog.dto.BookResponseDTO;
 import com.example.catalog.service.BookNotFoundException;
 import com.example.catalog.service.BookService;
 import com.example.catalog.service.InvalidBookException;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
-import com.example.catalog.service.InvalidBookException;
 
 @RestController
 @RequestMapping("/books")
@@ -31,14 +31,14 @@ public class BookController {
     }
 
     @PostMapping
-    public ResponseEntity<BookResponseDTO> create(@RequestBody BookRequestDTO request) {
+    public ResponseEntity<BookResponseDTO> create(@Valid @RequestBody BookRequestDTO request) {
         BookResponseDTO dto = service.create(request);
         return ResponseEntity.created(URI.create("/books/" + dto.id())).body(dto);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<BookResponseDTO> update(@PathVariable("id") Long id,
-                                                  @RequestBody BookRequestDTO request) {
+                                                  @Valid @RequestBody BookRequestDTO request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
