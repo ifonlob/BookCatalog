@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import com.example.catalog.service.InvalidBookException;
 
 @RestController
 @RequestMapping("/books")
@@ -43,5 +44,10 @@ public class BookController {
     public ResponseEntity<Void> delete(@PathVariable("id") Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(InvalidBookException.class)
+    public ResponseEntity<Void> badRequest(InvalidBookException exception) {
+        return ResponseEntity.badRequest().build();
     }
 }
