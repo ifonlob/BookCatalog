@@ -47,14 +47,4 @@ public class BookController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-    @ExceptionHandler(InvalidBookException.class)
-    public ResponseEntity<Void> badRequest(InvalidBookException exception) {
-        return ResponseEntity.badRequest().build();
-    }
-    @ExceptionHandler(BookNotFoundException.class)
-    public ResponseEntity<Void> notFound(BookNotFoundException exception) {
-        return ResponseEntity.notFound().build();
-    }
-
 }
