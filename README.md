@@ -287,3 +287,81 @@ Decisiones de esta etapa:
   responder `200`/`204` sin efecto.
 - El `400` se reserva para entradas rechazadas; no se usa `404` como cajón de
   sastre ni `null` en lugar de una excepción específica.
+
+## 9. Errores uniformes — entrega 6 (advice global)
+
+Los mapeos locales desaparecen del controlador y pasan a
+`com.example.catalog.web.GlobalExceptionHandler`, anotado con
+`@RestControllerAdvice`. Todas las respuestas de error comparten el mismo cuerpo:
+
+```json
+{
+  "error": "NOT_FOUND",
+  "message": "No existe el libro 999",
+  "timestamp": "2026-10-29T16:02:34.665120298Z"
+}
+```
+
+| Situación | HTTP | `error` |
+|---|---:|---|
+| `BookNotFoundException` | `404` | `NOT_FOUND` |
+| `InvalidBookException` | `400` | `BAD_REQUEST` |
+| `MethodArgumentNotValidException` | `400` | `VALIDATION_ERROR` |
+| JSON ilegible (`HttpMessageNotReadableException`) | `400` | `BAD_REQUEST` |
+| Fallo inesperado | `500` | `INTERNAL_ERROR` |
+
+Entrada validada con Bean Validation en `BookRequestDTO`: `@NotBlank` en
+`isbn`, `title` y `author` y `@Min(0)` en `year`, activadas con `@Valid` en el
+alta y en la modificación. Si la validación falla, el controlador **no llega a
+llamar al servicio**.
+
+```java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    public record ApiError(String error, String message, Instant timestamp) {}
+
+    private ResponseEntity<ApiError> build(HttpStatus status, String code, String message) {
+        return ResponseEntity.status(status)
+                .body(new ApiError(code, message, Instant.now()));
+    }
+}
+```
+
+Decisiones de esta etapa:
+
+- **`timestamp` generado en ejecución** con `Instant.now()` en cada respuesta; no
+  es una constante ni se calcula al arrancar.
+- El `500` devuelve siempre el mensaje literal `Unexpected error`: no se
+  propaga el texto de la excepción ni la traza, para no filtrar detalles
+  internos. Un fallo inesperado se registra en el servidor, no en la respuesta.
+- Se retiran los `@ExceptionHandler` locales del controlador; si se quedan,
+  tienen prioridad sobre el advice y las respuestas salen sin cuerpo.
+- `BAD_REQUEST` cubre dos casos distintos: el JSON ilegible (detectado antes de
+  entrar al controlador) y el rechazo del servicio (`InvalidBookException`),
+  que tras `@Valid` queda para reglas que no expresa Bean Validation.
+- El contrato de éxito no cambia: `201` + `Location` relativa, `204` sin cuerpo
+  y `200` con representación.
+
+Ejemplos con `curl`:
+
+```bash
+curl -i http://localhost:8080/books/999       # 404 NOT_FOUND
+curl -i -X POST http://localhost:8080/books \
+  -H 'Content-Type: application/json' \
+  -d '{"isbn":"978-1","title":" ","author":"Evans","year":2003}'   # 400 VALIDATION_ERROR
+curl -i -X POST http://localhost:8080/books \
+  -H 'Content-Type: application/json' -d '{'                        # 400 BAD_REQUEST
+```
+
+Pruebas de la suite (`./mvnw test`: 26 en verde):
+
+| Test | Qué verifica |
+|---|---|
+| `BookCheckpoint06Test` (semilla) | el advice con `@MockitoBean`: `NOT_FOUND`, `BAD_REQUEST`, `VALIDATION_ERROR` sin llamar al servicio, `INTERNAL_ERROR` sin detalles y el `201` de éxito |
+| `AdvicePropioTest` (propia) | cuerpo completo del `404`: `error`, `message` y `timestamp` |
+| `ErroresPropiosTest` (propia) | por HTTP real: `400` de validación, `400` de JSON ilegible y `404` en consulta, modificación y borrado |
+| `BookServiceTest` (propia) | el servicio real, incluidas las excepciones de entrada inválida y recurso inexistente |
+| `EscrituraPropiaTest` (propia) | regresión del CRUD real: crear → consultar → actualizar → borrar |
+| `BookListadoJsonTest` (propia) | `GET /books` responde `200` con `Content-Type: application/json` |
+| `CatalogApplicationTests` | el contexto arranca |
