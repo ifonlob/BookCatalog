@@ -2,6 +2,7 @@ package com.example.catalog;
 
 import com.example.catalog.dto.BookRequestDTO;
 import com.example.catalog.dto.BookResponseDTO;
+import com.example.catalog.service.BookNotFoundException;
 import com.example.catalog.service.BookService;
 import com.example.catalog.service.InvalidBookException;
 import org.junit.jupiter.api.Test;
@@ -10,7 +11,6 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,13 +52,23 @@ public class BookServiceTest {
         service.create(new BookRequestDTO("978-2", "TDD", "Beck", 2002));
         service.delete(1L);
         assertEquals(1, service.list().size());
-        assertNull(service.get(1L));
+        assertThrows(BookNotFoundException.class, () -> service.get(1L));
         assertNotNull(service.get(2L));
     }
 
     @Test
-    void getReturnsNullWhenMissing() {
-        assertNull(service.get(99L));
+    void getThrowsWhenMissing() {
+        assertThrows(BookNotFoundException.class, () -> service.get(99L));
+    }
+
+    @Test
+    void deleteThrowsWhenMissing() {
+        assertThrows(BookNotFoundException.class, () -> service.delete(99L));
+    }
+
+    @Test
+    void updateThrowsWhenMissing() {
+        assertThrows(BookNotFoundException.class, () -> service.update(99L, ddd));
     }
 
     @Test
