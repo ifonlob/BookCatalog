@@ -1,6 +1,7 @@
 package com.example.catalog;
 
 import com.jayway.jsonpath.JsonPath;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -61,6 +62,7 @@ class EscrituraPropiaTest {
 
     @SpringBootTest
     @AutoConfigureMockMvc
+    @Nested
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
     static
     class ErroresPropiosTest {
