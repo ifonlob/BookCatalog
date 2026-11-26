@@ -64,7 +64,6 @@ class EscrituraPropiaTest {
     @AutoConfigureMockMvc
     @Nested
     @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-    static
     class ErroresPropiosTest {
 
         @Autowired
