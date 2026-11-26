@@ -348,15 +348,36 @@ Tests run: 1, Failures: 0, Errors: 0 -- CatalogApplicationTests
 Tests run: 26, Failures: 0, Errors: 0 -- total
 ```
 
-## Plantilla para las siguientes entregas
+## Explicación teórica
 
-```markdown
-## Entrega N
+### 1. Texto a JSON: cómo Spring convierte el cuerpo JSON
 
-- Comportamiento que añadimos o contrato que evolucionamos:
-- Test y rojo observado (distinguir compilación/configuración de comportamiento):
-- Cambio mínimo y resultado verde:
-- Refactorización:
-- Decisiones sobre capas y contrato HTTP:
-- Contribuciones, revisión y siguiente paso:
-```
+Cuando el cliente envía una petición POST a `/books` con un cuerpo JSON, Spring no recibe "texto plano" directamente en el método del controlador. Gracias a `@RequestBody`, Spring intercepta ese cuerpo HTTP y se lo pasa a **Jackson** (la librería que viene por defecto en Spring Boot).
+
+Detrás está **`ObjectMapper`**: Jackson lee el JSON, mira los campos (`isbn`, `title`, `author`, `year`) y los asigna a los campos del record `BookRequestDTO`. Si falta algo o viene mal, Jackson lanza un error antes de que entre en tu servicio.
+
+Para la respuesta pasa lo mismo al revés: el controlador devuelve un objeto Java (por ejemplo `BookResponseDTO`) y, por estar anotado con `@RestController` (que ya trae dentro `@ResponseBody`), Spring usa otra vez `ObjectMapper` para convertir ese objeto Java en texto JSON y se lo envía al cliente con el header `Content-Type: application/json`.
+
+En resumen:
+- JSON de entrada → Jackson/ObjectMapper → objeto Java (DTO)
+- objeto Java (DTO) → Jackson/ObjectMapper → JSON de salida
+
+### 2. DTOs: `BookRequestDTO` y `BookResponseDTO`
+
+Los DTOs (Data Transfer Objects) son objetos sencillos que solo sirven para llevar datos de un lado a otro. En este proyecto son records:
+
+- **`BookRequestDTO`** (`isbn`, `title`, `author`, `year`): lo que el cliente envía al crear o actualizar un libro. No lleva `id` porque el cliente no lo sabe ni debería mandarlo.
+- **`BookResponseDTO`** (`id`, `isbn`, `title`, `author`, `year`): lo que el servidor devuelve al cliente. Sí lleva el `id` asignado por el servidor.
+
+**¿Por qué no exponer directamente la entidad `Book`?**  
+`Book` es la entidad del dominio (la que se guarda en el mapa en memoria). Si la devolviera tal cual, estarías exponiendo la estructura interna de tu aplicación. Con los DTOs controlas exactamente qué campos ve el cliente, puedes omitir campos sensibles, cambiar nombres o agregar campos calculados sin tocar la entidad. Además, si mañana cambias cómo se guarda `Book` internamente, la API externa no se rompe.
+
+### 3. Códigos 201 y 204 con `Location`
+
+- **POST `/books` → 201 Created**  
+  Cuando se crea un libro correctamente, el controlador devuelve `ResponseEntity.created(URI.create("/books/" + dto.id())).body(dto)`. Eso genera una respuesta HTTP con estado **201 Created** y una cabecera `Location: /books/{id}`, diciendo al cliente: "el recurso se ha creado y lo puedes encontrar en esta URL".
+
+- **DELETE `/books/{id}` → 204 No Content**  
+  Cuando se borra un libro, no hay nada útil que devolver en el cuerpo. Se usa `ResponseEntity.noContent().build()`, que devuelve estado **204 No Content** sin cuerpo de respuesta. El cliente sabe que se hizo pero no hay contenido que mostrar.
+
+Ese es todo lo que toca explicar. Nada de tocar código, solo tenerlo claro para la revisión.
